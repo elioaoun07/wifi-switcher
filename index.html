@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>WiFi Switch</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1A1D21">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WiFi">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root {
+    --bg: #1A1D21;
+    --bg-raised: #22262B;
+    --accent: #4A9EFF;
+    --accent-dim: #2E4E75;
+    --text: #F5F6F7;
+    --text-dim: #8A9099;
+    --border: #2E3238;
+    --success: #4ADE80;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  .wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 20px 20px;
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  header {
+    margin-bottom: 22px;
+  }
+
+  .eyebrow {
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: 0.01em;
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-top: 2px;
+  }
+
+  /* Main action button */
+  .open-settings {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: var(--accent);
+    color: #08131F;
+    border: none;
+    border-radius: 18px;
+    padding: 22px 20px;
+    font-size: 19px;
+    font-weight: 700;
+    width: 100%;
+    cursor: pointer;
+    box-shadow: 0 8px 24px -8px rgba(74, 158, 255, 0.5);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
+  }
+
+  .open-settings:active {
+    transform: scale(0.97);
+    box-shadow: 0 4px 14px -6px rgba(74, 158, 255, 0.5);
+  }
+
+  .open-settings svg {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  .hint {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    line-height: 1.4;
+  }
+
+  /* Networks list */
+  .networks {
+    margin-top: 32px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .section-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+  }
+
+  .network-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+
+  .network-card:active {
+    background: #282D33;
+    border-color: var(--accent-dim);
+  }
+
+  .signal-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--accent-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .signal-mark svg {
+    width: 20px;
+    height: 20px;
+    color: var(--accent);
+  }
+
+  .network-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .network-name {
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .network-note {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chevron {
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+  .empty-state {
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+    padding: 18px 16px;
+    color: var(--text-dim);
+    font-size: 14px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* Add / edit row */
+  .manage-row {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .manage-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 10px 14px;
+    text-decoration: underline;
+    text-decoration-color: var(--border);
+    text-underline-offset: 3px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    max-width: 90%;
+    text-align: center;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Edit modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    align-items: flex-end;
+    z-index: 10;
+  }
+
+  .modal-overlay.show {
+    display: flex;
+  }
+
+  .modal {
+    background: var(--bg-raised);
+    border-radius: 20px 20px 0 0;
+    padding: 22px 20px calc(24px + env(safe-area-inset-bottom));
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    border: 1px solid var(--border);
+    border-bottom: none;
+  }
+
+  .modal h2 {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  .modal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
+  .modal-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+
+  .modal-item input[type="text"] {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    min-width: 0;
+  }
+
+  .modal-item .remove-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+    font-family: inherit;
+  }
+
+  .add-network-btn {
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    color: var(--text-dim);
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .modal-actions button {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-cancel {
+    background: var(--bg);
+    color: var(--text-dim);
+    border: 1px solid var(--border) !important;
+  }
+
+  .btn-save {
+    background: var(--accent);
+    color: #08131F;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="greeting">Work WiFi</div>
+    <h1>Switch network</h1>
+  </header>
+
+  <button class="open-settings" id="openSettingsBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+      <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+      <circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/>
+    </svg>
+    Open WiFi settings
+  </button>
+  <div class="hint">Opens straight to your phone's WiFi list — tap the network below once you're there</div>
+
+  <div class="networks" id="networksList">
+    <div class="section-label">Your networks</div>
+    <!-- populated by JS -->
+  </div>
+
+  <div class="manage-row">
+    <button class="manage-btn" id="editBtn">Edit networks</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>Edit your networks</h2>
+    <div class="modal-list" id="modalList"></div>
+    <button class="add-network-btn" id="addNetworkBtn">+ Add network</button>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancelBtn">Cancel</button>
+      <button class="btn-save" id="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const DEFAULT_NETWORKS = ['Office-Main', 'Office-Guest'];
+  const STORAGE_KEY = 'wifi-switch-networks';
+
+  function loadNetworks() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return DEFAULT_NETWORKS.slice();
+  }
+
+  function saveNetworks(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  }
+
+  let networks = loadNetworks();
+
+  const networksList = document.getElementById('networksList');
+  const toast = document.getElementById('toast');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalList = document.getElementById('modalList');
+
+  function signalIcon() {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+      <circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/>
+    </svg>`;
+  }
+
+  function renderNetworks() {
+    const label = '<div class="section-label">Your networks</div>';
+    if (networks.length === 0) {
+      networksList.innerHTML = label + `<div class="empty-state">No networks saved yet. Tap "Edit networks" below to add the WiFi names you switch between.</div>`;
+      return;
+    }
+    const cards = networks.map(name => `
+      <div class="network-card" data-name="${escapeHtml(name)}">
+        <div class="signal-mark">${signalIcon()}</div>
+        <div class="network-info">
+          <div class="network-name">${escapeHtml(name)}</div>
+          <div class="network-note">Already saved on this phone</div>
+        </div>
+        <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </div>
+    `).join('');
+    networksList.innerHTML = label + cards;
+
+    networksList.querySelectorAll('.network-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const name = card.getAttribute('data-name');
+        navigator.clipboard?.writeText(name).catch(() => {});
+        showToast(`Copied "${name}" — opening settings…`);
+        setTimeout(openWifiSettings, 400);
+      });
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove('show'), 2200);
+  }
+
+  function openWifiSettings() {
+    // Android intent URL — opens the system WiFi settings screen directly.
+    // Falls back gracefully if the intent isn't supported (e.g. desktop testing).
+    const intentUrl = 'intent://#Intent;action=android.settings.WIFI_SETTINGS;end';
+    window.location.href = intentUrl;
+  }
+
+  document.getElementById('openSettingsBtn').addEventListener('click', () => {
+    showToast('Opening WiFi settings…');
+    setTimeout(openWifiSettings, 150);
+  });
+
+  // Edit modal
+  document.getElementById('editBtn').addEventListener('click', openModal);
+  document.getElementById('cancelBtn').addEventListener('click', closeModal);
+  document.getElementById('addNetworkBtn').addEventListener('click', addModalRow);
+  document.getElementById('saveBtn').addEventListener('click', saveModal);
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) closeModal();
+  });
+
+  function openModal() {
+    modalList.innerHTML = '';
+    networks.forEach(name => addModalRow(name));
+    if (networks.length === 0) addModalRow('');
+    modalOverlay.classList.add('show');
+  }
+
+  function closeModal() {
+    modalOverlay.classList.remove('show');
+  }
+
+  function addModalRow(value = '') {
+    const row = document.createElement('div');
+    row.className = 'modal-item';
+    row.innerHTML = `
+      <input type="text" placeholder="Network name" value="${escapeHtml(value)}">
+      <button class="remove-btn" aria-label="Remove">×</button>
+    `;
+    row.querySelector('.remove-btn').addEventListener('click', () => row.remove());
+    modalList.appendChild(row);
+    row.querySelector('input').focus();
+  }
+
+  function saveModal() {
+    const inputs = modalList.querySelectorAll('input[type="text"]');
+    const values = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+    networks = values;
+    saveNetworks(networks);
+    renderNetworks();
+    closeModal();
+  }
+
+  // Greeting based on time of day
+  function setGreeting() {
+    const h = new Date().getHours();
+    const el = document.getElementById('greeting');
+    if (h < 12) el.textContent = 'Good morning — Work WiFi';
+    else if (h < 18) el.textContent = 'Work WiFi';
+    else el.textContent = 'Work WiFi';
+  }
+
+  setGreeting();
+  renderNetworks();
+
+  // Register service worker for installability / offline use
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>
